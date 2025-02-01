@@ -33,11 +33,11 @@ export function BuildInterface({ projectName }: { projectName: string }) {
         <Terminal projectName={projectName} />
       </div>
       <div className="h-full border-l">
-        <Tabs defaultValue="preview" className="h-full">
+        <Tabs defaultValue="code" className="h-full">
           <div className="pt-1 px-4">
             <TabsList>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
               <TabsTrigger value="code">Code</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
           </div>
           <TabsContent value="preview" className="h-[calc(100%-48px)]">

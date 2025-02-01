@@ -37,7 +37,9 @@ export function Header() {
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold italic">Build-Web</span>
+            <span className="text-2xl font-bold italic bg-clip-text text-transparent bg-gradient-to-b from-primary to-primary/50">
+              Build-Web
+            </span>
           </Link>
         </motion.div>
         <motion.div
