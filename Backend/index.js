@@ -2,6 +2,8 @@ import express from "express";
 
 import bodyParser from "body-parser";
 
+import cors from "cors";
+
 import { configDotenv } from "dotenv";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -19,6 +21,7 @@ configDotenv();
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
 
 // Made AI model
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
