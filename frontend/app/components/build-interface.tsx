@@ -2,20 +2,49 @@
 
 import { useState, useEffect } from "react";
 import Split from "react-split";
+
+import axios from "axios";
+
 import { Terminal } from "./terminal";
 import { CodePreview } from "./code-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { parseXML, Step, StepType } from "@/utils/steps";
 
-export function BuildInterface({ projectName }: { projectName: string }) {
-  const [mounted, setMounted] = useState(false);
+export function BuildInterface({ prompt }: { prompt: string }) {
+  const [steps, setSteps] = useState<Array<Step>>([]);
+
+  const init = async () => {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/template`,
+      {
+        prompt,
+      }
+    );
+
+    const { prompts, uiPrompts } = response.data;
+
+    setSteps(parseXML(uiPrompts[0]));
+    console.log("Steps", parseXML(uiPrompts[0]));
+
+    // const stepsResponse = await axios.post(
+    //   `${process.env.NEXT_PUBLIC_BASE_URL}/chat`,
+    //   {
+    //     messages: [
+    //       prompts.map((step: string) => {
+    //         return { role: "user", parts: [{ text: step }] };
+    //       }),
+    //       {
+    //         role: "user",
+    //         parts: [{ text: prompt }],
+    //       },
+    //     ],
+    //   }
+    // );
+  };
 
   useEffect(() => {
-    setMounted(true);
+    init();
   }, []);
-
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <Split
@@ -30,7 +59,7 @@ export function BuildInterface({ projectName }: { projectName: string }) {
       className="flex h-[100%]"
     >
       <div className="h-full bg-black p-4">
-        <Terminal projectName={projectName} />
+        <Terminal steps={steps} projectName={prompt} />
       </div>
       <div className="h-full border-l">
         <Tabs defaultValue="code" className="h-full">
