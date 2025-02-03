@@ -73,12 +73,10 @@ app.post("/chat", async (req, res) => {
   const response = await result.generateContent({
     contents: messages,
     generationConfig: {
-      maxOutputTokens: 2000,
+      maxOutputTokens: 8000,
       temperature: 0.1,
     },
   });
-
-  console.log(response.response.text());
 
   res.json({
     result: response.response.text(),
