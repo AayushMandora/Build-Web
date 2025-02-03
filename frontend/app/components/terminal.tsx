@@ -21,21 +21,27 @@ export function Terminal(props: terminalProps) {
             <div
               key={index}
               className={`flex items-center space-x-3 ${
-                step.status === "completed" ? "text-gray-600" : "text-green-400"
+                step.status === "pending" ? "text-gray-600" : "text-green-400"
               }`}
             >
-              <div className="w-6 h-6 flex-shrink-0">
-                {step.status === "completed" ? (
-                  <Check className="w-5 h-5 text-green-500" />
-                ) : step.status === "in-progress" ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
-                )}
-              </div>
-              <span className={step.status === "pending" ? "text-white" : ""}>
-                {step.title}
-              </span>
+              {step.type === 1 ? null : (
+                <>
+                  <div className="w-6 h-6 flex-shrink-0">
+                    {step.status === "completed" ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : step.status === "in-progress" ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
+                    )}
+                  </div>
+                  <span
+                    className={step.status === "pending" ? "text-white" : ""}
+                  >
+                    {step.title}
+                  </span>
+                </>
+              )}
             </div>
           ))}
         </div>

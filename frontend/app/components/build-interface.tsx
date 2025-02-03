@@ -5,14 +5,18 @@ import Split from "react-split";
 
 import axios from "axios";
 
+import { parseXML, Step, StepType } from "@/utils/steps";
+import { FileItem } from "@/utils/types";
+
 import { Terminal } from "./terminal";
 import { CodePreview } from "./code-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { parseXML, Step, StepType } from "@/utils/steps";
 
 export function BuildInterface({ prompt }: { prompt: string }) {
-  const [steps, setSteps] = useState<Array<Step>>([]);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [files, setFiles] = useState<FileItem[]>([]);
 
+  // init
   const init = async () => {
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BASE_URL}/template`,
@@ -23,28 +27,108 @@ export function BuildInterface({ prompt }: { prompt: string }) {
 
     const { prompts, uiPrompts } = response.data;
 
-    setSteps(parseXML(uiPrompts[0]));
-    console.log("Steps", parseXML(uiPrompts[0]));
+    setSteps(parseXML(uiPrompts[0])); 
 
-    // const stepsResponse = await axios.post(
-    //   `${process.env.NEXT_PUBLIC_BASE_URL}/chat`,
-    //   {
-    //     messages: [
-    //       prompts.map((step: string) => {
-    //         return { role: "user", parts: [{ text: step }] };
-    //       }),
-    //       {
-    //         role: "user",
-    //         parts: [{ text: prompt }],
-    //       },
-    //     ],
-    //   }
-    // );
+    const chatResponse = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/chat`,
+      {
+        messages: [
+          prompts.map((step: string) => {
+            return { role: "user", parts: [{ text: step }] };
+          }),
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
+      }
+    );
+
+    const result = chatResponse.data.result;
+
+    console.log("result", parseXML(result));
+
+    setSteps((prevSteps) => [...prevSteps, ...parseXML(result)]);
+  };
+
+  // make fileStructure
+  const buildFileStructure = () => {
+    let originalFiles = [...files];
+    let updateHappened = false;
+    steps
+      .filter(({ status }) => status === "pending")
+      .map((step) => {
+        updateHappened = true;
+        if (step?.type === StepType.CreateFile) {
+          let parsedPath = step.path?.split("/") ?? []; // ["src", "components", "App.tsx"]
+          let currentFileStructure = [...originalFiles]; // {}
+          let finalAnswerRef = currentFileStructure;
+
+          let currentFolder = "";
+          while (parsedPath.length) {
+            currentFolder = `${currentFolder}/${parsedPath[0]}`;
+            let currentFolderName = parsedPath[0];
+            parsedPath = parsedPath.slice(1);
+
+            if (!parsedPath.length) {
+              // final file
+              let file = currentFileStructure.find(
+                (x) => x.path === currentFolder
+              );
+              if (!file) {
+                currentFileStructure.push({
+                  name: currentFolderName,
+                  type: "file",
+                  path: currentFolder,
+                  content: step.code,
+                });
+              } else {
+                file.content = step.code;
+              }
+            } else {
+              /// in a folder
+              let folder = currentFileStructure.find(
+                (x) => x.path === currentFolder
+              );
+              if (!folder) {
+                // create the folder
+                currentFileStructure.push({
+                  name: currentFolderName,
+                  type: "folder",
+                  path: currentFolder,
+                  children: [],
+                });
+              }
+
+              currentFileStructure = currentFileStructure.find(
+                (x) => x.path === currentFolder
+              )!.children!;
+            }
+          }
+          originalFiles = finalAnswerRef;
+        }
+      });
+
+    if (updateHappened) {
+      setFiles(originalFiles);
+      setSteps((steps) =>
+        steps.map((s: Step) => {
+          return {
+            ...s,
+            status: "completed",
+          };
+        })
+      );
+    }
   };
 
   useEffect(() => {
     init();
   }, []);
+
+  useEffect(() => {
+    buildFileStructure();
+  }, [steps]);
 
   return (
     <Split
@@ -77,7 +161,7 @@ export function BuildInterface({ prompt }: { prompt: string }) {
             />
           </TabsContent>
           <TabsContent value="code" className="h-[calc(100%-48px)] p-4">
-            <CodePreview />
+            <CodePreview fileStructure={files} />
           </TabsContent>
         </Tabs>
       </div>

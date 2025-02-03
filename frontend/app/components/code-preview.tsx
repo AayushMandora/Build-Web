@@ -10,82 +10,24 @@ import {
   Check,
   Copy,
 } from "lucide-react";
+
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+import { FileItem } from "@/utils/types";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-interface FileStructure {
-  [key: string]: {
-    type: "file" | "folder";
-    content?: string;
-    language?: string;
-    children?: FileStructure;
-  };
+interface CodePreviewProps {
+  fileStructure: FileItem[];
 }
+export function CodePreview(props: CodePreviewProps) {
+  const { fileStructure } = props;
 
-const fileStructure: FileStructure = {
-  app: {
-    type: "folder",
-    children: {
-      "page.tsx": {
-        type: "file",
-        language: "tsx",
-        content: `export default function Home() {
-return (
-  <main className="flex min-h-screen flex-col items-center justify-center p-24">
-    <h1 className="text-4xl font-bold">Welcome to Next.js</h1>
-  </main>
-)
-}`,
-      },
-      "layout.tsx": {
-        type: "file",
-        language: "tsx",
-        content: `export default function RootLayout({
-children,
-}: {
-children: React.ReactNode
-}) {
-return (
-  <html lang="en">
-    <body>{children}</body>
-  </html>
-)
-}`,
-      },
-      "globals.css": {
-        type: "file",
-        language: "css",
-        content: `@tailwind base;
-@tailwind components;
-@tailwind utilities;`,
-      },
-    },
-  },
-  components: {
-    type: "folder",
-    children: {
-      ui: {
-        type: "folder",
-        children: {
-          "button.tsx": {
-            type: "file",
-            language: "tsx",
-            content: `export function Button() {
-return <button>Click me</button>
-}`,
-          },
-        },
-      },
-    },
-  },
-};
-
-export function CodePreview() {
-  const [selectedFile, setSelectedFile] = useState("app/page.tsx");
+  const [selectedFile, setSelectedFile] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(["app"])
+    new Set([])
   );
   const [copying, setCopying] = useState(false);
 
@@ -114,9 +56,18 @@ export function CodePreview() {
     }
   };
 
-  const renderFileTree = (structure: FileStructure, path: string = "") => {
-    return Object.entries(structure).map(([name, item]) => {
-      const currentPath = path ? `${path}/${name}` : name;
+  const renderFileTree = (structure: FileItem[], path: string = "") => {
+    // Sort folders first, then files
+    const sortedStructure = [...structure].sort((a, b) =>
+      a.type === "folder" && b.type === "file"
+        ? -1
+        : a.type === "file" && b.type === "folder"
+        ? 1
+        : 0
+    );
+
+    return sortedStructure.map((item) => {
+      const currentPath = path ? `${path}/${item.name}` : item.name;
 
       if (item.type === "folder") {
         const isExpanded = expandedFolders.has(currentPath);
@@ -135,7 +86,7 @@ export function CodePreview() {
                 <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />
               )}
               <Folder className="h-4 w-4 mr-2 text-white" />
-              {name}
+              <span className="truncate max-w-[80%]">{item.name}</span>
             </button>
             {isExpanded && item.children && (
               <div className="ml-4">
@@ -156,31 +107,41 @@ export function CodePreview() {
           )}
         >
           <File className="h-4 w-4 mr-2 text-muted-foreground" />
-          {name}
+          <span className="truncate max-w-[80%]">{item.name}</span>
         </button>
       );
     });
   };
 
   const findFile = (
-    structure: FileStructure,
+    structure: FileItem[],
     path: string
   ): { content?: string; language?: string } | undefined => {
     const parts = path.split("/");
-    let current = structure;
+    let current: FileItem[] = structure;
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      if (current[parts[i]]?.type === "folder" && current[parts[i]]?.children) {
-        current = current[parts[i]].children!;
+    for (let i = 0; i < parts.length; i++) {
+      const foundItem = current.find((item) => item.name === parts[i]);
+
+      if (!foundItem) return undefined;
+
+      if (foundItem.type === "folder") {
+        if (!foundItem.children) return undefined;
+        current = foundItem.children;
+      } else if (i === parts.length - 1) {
+        return { content: foundItem.content };
       } else {
         return undefined;
       }
     }
 
-    const file = current[parts[parts.length - 1]];
-    return file
-      ? { content: file.content, language: file.language }
-      : undefined;
+    return undefined;
+  };
+
+  const cleanContent = (content?: string) => {
+    return (
+      content && content.replace(/^```[a-zA-Z]*\n/, "").replace(/\n```$/, "")
+    );
   };
 
   const selectedFileData = findFile(fileStructure, selectedFile);
@@ -229,7 +190,7 @@ export function CodePreview() {
                 }}
                 showLineNumbers
               >
-                {selectedFileData?.content || ""}
+                {cleanContent(selectedFileData?.content) || ""}
               </SyntaxHighlighter>
             </div>
           </div>
