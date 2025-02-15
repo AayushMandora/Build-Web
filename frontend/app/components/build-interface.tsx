@@ -7,12 +7,17 @@ import axios from "axios";
 
 import { parseXML, Step, StepType } from "@/utils/steps";
 import { FileItem } from "@/utils/types";
+import { transformFiles } from "@/utils/helper";
+import useWebContainer from "@/utils/webContainer";
 
 import { Terminal } from "./terminal";
 import { CodePreview } from "./code-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Preview from "./preview";
 
 export function BuildInterface({ prompt }: { prompt: string }) {
+  const webContainer = useWebContainer();
+
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
 
@@ -27,7 +32,7 @@ export function BuildInterface({ prompt }: { prompt: string }) {
 
     const { prompts, uiPrompts } = response.data;
 
-    setSteps(parseXML(uiPrompts[0])); 
+    setSteps(parseXML(uiPrompts[0]));
 
     const chatResponse = await axios.post(
       `${process.env.NEXT_PUBLIC_BASE_URL}/chat`,
@@ -45,8 +50,6 @@ export function BuildInterface({ prompt }: { prompt: string }) {
     );
 
     const result = chatResponse.data.result;
-
-    console.log("result", parseXML(result));
 
     setSteps((prevSteps) => [...prevSteps, ...parseXML(result)]);
   };
@@ -122,6 +125,11 @@ export function BuildInterface({ prompt }: { prompt: string }) {
     }
   };
 
+  const processFiles = async () => {
+    const result = transformFiles(files);
+    await webContainer?.mount(result);
+  };
+
   useEffect(() => {
     init();
   }, []);
@@ -129,6 +137,10 @@ export function BuildInterface({ prompt }: { prompt: string }) {
   useEffect(() => {
     buildFileStructure();
   }, [steps]);
+
+  useEffect(() => {
+    processFiles();
+  }, [files]);
 
   return (
     <Split
@@ -154,11 +166,7 @@ export function BuildInterface({ prompt }: { prompt: string }) {
             </TabsList>
           </div>
           <TabsContent value="preview" className="h-[calc(100%-48px)]">
-            <iframe
-              src="about:blank"
-              className="w-full h-full border-0"
-              title="Preview"
-            />
+            <Preview webContainer={webContainer} />
           </TabsContent>
           <TabsContent value="code" className="h-[calc(100%-48px)] p-4">
             <CodePreview fileStructure={files} />
