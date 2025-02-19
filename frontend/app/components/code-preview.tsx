@@ -9,7 +9,11 @@ import {
   Folder,
   Check,
   Copy,
+  Download,
 } from "lucide-react";
+
+import JSZip from "jszip";
+import saveAs from "file-saver";
 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -144,6 +148,34 @@ export function CodePreview(props: CodePreviewProps) {
     );
   };
 
+  const createZip = (fileStructure: FileItem[]): JSZip => {
+    const zip = new JSZip();
+
+    const addToZip = (zipFolder: JSZip, files: FileItem[]) => {
+      files.forEach((file) => {
+        if (file.type === "folder") {
+          const folder = zipFolder.folder(file.name);
+          if (file.children) {
+            addToZip(folder!, file.children);
+          }
+        } else {
+          zipFolder.file(file.name, file.content || "");
+        }
+      });
+    };
+
+    addToZip(zip, fileStructure);
+    return zip;
+  };
+
+  const downloadZip = () => {
+    const zip = createZip(fileStructure);
+
+    zip.generateAsync({ type: "blob" }).then((blob) => {
+      saveAs(blob, "files.zip");
+    });
+  };
+
   const selectedFileData = findFile(fileStructure, selectedFile);
 
   return (
@@ -151,8 +183,9 @@ export function CodePreview(props: CodePreviewProps) {
       <PanelGroup direction="horizontal">
         <Panel defaultSize={20} minSize={15}>
           <div className="h-full bg-[#252526] p-2">
-            <div className="text-sm font-medium mb-2 text-gray-400">
+            <div className="text-sm font-medium mb-2 text-gray-400 flex justify-between items-center hover:cursor-pointer">
               Explorer
+              <Download className="h-5 w-5" onClick={downloadZip}/>
             </div>
             <div className="space-y-1">{renderFileTree(fileStructure)}</div>
           </div>

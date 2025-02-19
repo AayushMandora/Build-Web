@@ -2,18 +2,14 @@ import { Check, Loader2 } from "lucide-react";
 import { Step } from "@/utils/steps";
 
 interface terminalProps {
-  projectName: string;
   steps: Array<Step>;
 }
 
 export function Terminal(props: terminalProps) {
-  const { projectName, steps } = props;
+  const { steps } = props;
 
   return (
     <div className="font-mono text-sm">
-      <h2 className="text-white text-xl font-bold italic mb-3">
-        {projectName}
-      </h2>
       <h2 className="text-white text-base font-bold mb-3">Steps</h2>
       <div className="border border-gray-800 rounded-lg p-4 bg-black/50 h-[60vh] overflow-y-scroll">
         <div className="space-y-3">

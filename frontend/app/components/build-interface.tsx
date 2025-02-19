@@ -69,7 +69,7 @@ export function BuildInterface({ prompt }: { prompt: string }) {
 
     const result = chatResponse.data.result;
 
-    setSteps((prevSteps) => [...prevSteps, ...parseXML(result)]);
+    setSteps([...parseXML(result)]);
 
     setLlmResponse([
       prompts.map((step: string) => {
@@ -181,7 +181,7 @@ export function BuildInterface({ prompt }: { prompt: string }) {
 
     const result = response.data.result;
 
-    setSteps((prevSteps) => [...prevSteps, ...parseXML(result)]);
+    setSteps([...parseXML(result)]);
 
     setLlmResponse((data) => [
       ...data,

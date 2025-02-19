@@ -2,20 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+
 import { ArrowRight } from "lucide-react";
 
+import { motion } from "framer-motion";
+
+import { Oval } from "react-loader-spinner";
+
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+
 export function HeroSection() {
-  const [projectName, setProjectName] = useState("");
   const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
+  const [projectName, setProjectName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     if (projectName.trim()) {
       router.push(`/build/${encodeURIComponent(projectName)}`);
     }
+    setLoading(false);
   };
 
   return (
@@ -61,8 +70,14 @@ export function HeroSection() {
           className="h-12 px-6"
           disabled={!projectName.trim()}
         >
-          <ArrowRight className="mr-2 h-4 w-4" />
-          Build
+          {loading ? (
+            <Oval color="black" height={20} width={20} />
+          ) : (
+            <>
+              <ArrowRight className="mr-2 h-4 w-4" />
+              Build
+            </>
+          )}
         </Button>
       </motion.form>
     </motion.div>

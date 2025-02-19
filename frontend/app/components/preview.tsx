@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
+
 import { WebContainer } from "@webcontainer/api";
+
 import { ThreeDots } from "react-loader-spinner";
+
+import { FileItem } from "@/utils/types";
 
 interface PreviewProps {
   webContainer: WebContainer | null;
+  files: FileItem[];
 }
 
 const Preview = (props: PreviewProps) => {
